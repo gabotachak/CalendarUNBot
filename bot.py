@@ -9,6 +9,9 @@ from telegram import Update
 import telegram
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 import urllib.request
+import tabula
+
+WEEK = 'LUNES','MARTES','MIERCOLES','JUEVES','VIERNES','SABADO'
 
 # Enable logging
 logging.basicConfig(
@@ -17,13 +20,13 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-MODE = "test"  # stable to deploy in heroku or test to deploy locally
+MODE = "stable"  # stable to deploy in heroku or test to deploy locally
 
 if(MODE == "stable"):
     # TOKEN for stable version
-    TOKEN = ""
+    TOKEN = "1628879473:AAFymunMfCDKlf7L0HtmNOnQ5ZSjs47wjq8"
     PORT = int(os.environ.get('PORT', 5000))
-    ADDRESS = "https://.herokuapp.com/"
+    ADDRESS = "https://calendarunbot.herokuapp.com/"
 elif(MODE == "test"):
     # TOKEN for test version
     TOKEN = "1534450445:AAGDQ-ClfsEgdVpKfIDxIK9Vp_z8kaLhvfc"
@@ -46,13 +49,21 @@ def help_command(update: Update, context: CallbackContext) -> None:
 
 
 def doc(update: Update, context: CallbackContext) -> None:
-    update.message.reply_html(update.message.document.file_name)
-    update.message.reply_document(update.message.document)
+    update.message.reply_html('Processing...')
     url = update.message.document.get_file().file_path
-    print(url)
     response = urllib.request.urlopen(url)
     file = open("calendar.pdf", 'wb')
     file.write(response.read())
+    file.close()
+    file = open("calendar.pdf", 'rb')
+    fileReader = PyPDF2.PdfFileReader(file)
+    tables = []
+    for i in range(1,fileReader.numPages+1):
+        if(tabula.read_pdf("calendar.pdf",pages=i)):
+            tables.append(tabula.read_pdf("calendar.pdf",pages=i)[-1])
+    print(tables)
+    file.close()
+    # os.remove("calendar.pdf")
 
 
 def main():
